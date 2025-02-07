@@ -1,0 +1,68 @@
+argocd-apps:
+  # application example which is deployed in only 1 environment
+  applications:
+    - name: github-runner
+      namespace: github-runner
+      project: infra
+      source:
+        repoURL: https://github.com/CyberCubeAnalyticsInc/....
+        targetRevision: main
+        path: gitlab-runner
+        helm:
+          valueFiles:
+            - values.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: gitlab-ci-runner
+      syncPolicy:
+        # here also possible to define automatic git sync
+        syncOptions:
+          - CreateNamespace=true
+  projects:
+    - name: infra
+      namespace: argocd
+      description: sre gitops infrastructure folders
+      # example source repo
+      sourceRepos:
+        - https://github.com/CyberCubeAnalyticsInc/sre/tree/dev/kubernetes/eks.git
+
+      destinations:
+        - namespace: "*"
+          server: "*"
+      clusterResourceWhitelist:
+        - group: "*"
+          kind: "*"
+  applicationsets:
+    # applicationset with multiple env deployments
+    - name: prometheus
+      namespace: argocd
+      generators:
+        - list:
+            elements:
+              - cluster: dev
+                # have to define trust permissions in shared-services cluster to have access to dev EKS url
+                url: https://782989990620AEDED0C2368C6B4D9E24.gr7.us-east-1.eks.amazonaws.com
+                targetRevision: main
+              - cluster: prod
+                url: https://782989990620AEDED0C2368C6B4D9E24.gr7.us-east-1.eks.amazonaws.com
+                targetRevision: main
+      template:
+        metadata:
+          name: "{{cluster}}-prometheus"
+        spec:
+          project: infra
+          source:
+            repoURL: "https://github.com/CyberCubeAnalyticsInc/sre/tree/dev/kubernetes/eks.git"
+            path: prometheus
+            targetRevision: "{{targetRevision}}"
+            helm:
+              valueFiles:
+                - values.yaml
+                - values-{{cluster}}.yaml
+          destination:
+            server: "{{url}}"
+            namespace: monitoring
+          syncPolicy:
+            syncOptions:
+              - CreateNamespace=true
+              - ServerSideApply=true
