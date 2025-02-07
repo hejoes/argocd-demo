@@ -1,5 +1,7 @@
 # argocd-demo
 
+This demo covers GitOps application development workflow in ArgoCD.
+
 ## Umbrella charts
 
 - Current setup gives example of umbrella Helm chart setup but this also works
@@ -7,7 +9,7 @@
 
 ## Upgrading the Chart
 
-1. Pump up `dependencies.verion`
+1. Pump up `dependencies.version`
 2. run `helm dependency update`
 3. commit
 4. sync
